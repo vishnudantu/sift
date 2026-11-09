@@ -20,7 +20,7 @@ Updated: 2026-11-09
 
 ## Current milestone
 
-Milestone 2: evidence chain foundation complete. The application still has no published official inspection records.
+Milestone 3 in progress: the in-memory evidence repository supports reviewer approval, rejection, and append-only correction events. Durable persistence and authenticated administration remain incomplete. The application still has no published official inspection records.
 
 ## In progress
 
