@@ -8,6 +8,12 @@ const root = fileURLToPath(new URL(".", import.meta.url));
 const port = Number(process.env.PORT || 4173);
 const types = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".json": "application/json; charset=utf-8", ".svg": "image/svg+xml" };
 const publicAssets = new Set(["app.js", "styles.css"]);
+const securityHeaders = {
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+};
 
 export const resolvePublicPath = (requestedPath) => {
   const cleanPath = requestedPath.split("?")[0];
@@ -34,17 +40,17 @@ export const createAppServer = () => createServer(async (request, response) => {
   if (pathname === "/api/search") {
     const query = new URL(request.url || "/", "http://127.0.0.1").searchParams.get("q") || "";
     if (query.length > 120) {
-      response.writeHead(400, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+      response.writeHead(400, { ...securityHeaders, "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
       response.end(JSON.stringify({ error: "Search query must be 120 characters or fewer." }));
       return;
     }
-    response.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" });
+    response.writeHead(200, { ...securityHeaders, "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     response.end(JSON.stringify(searchPublicIndex(query)));
     return;
   }
   if (pathname === "/") {
     const body = renderPage();
-    response.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
+    response.writeHead(200, { ...securityHeaders, "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
     response.end(request.method === "HEAD" ? undefined : body);
     return;
   }
@@ -61,7 +67,7 @@ export const createAppServer = () => createServer(async (request, response) => {
   }
   try {
     const body = await readFile(path);
-    response.writeHead(200, { "Content-Type": types[extname(path)] || "application/octet-stream", "Cache-Control": "no-store" });
+    response.writeHead(200, { ...securityHeaders, "Content-Type": types[extname(path)] || "application/octet-stream", "Cache-Control": "no-store" });
     response.end(request.method === "HEAD" ? undefined : body);
   } catch {
     response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });

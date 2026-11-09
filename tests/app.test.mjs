@@ -40,10 +40,14 @@ test("serves server-rendered HTML and static assets", async (t) => {
   const base = `http://127.0.0.1:${address.port}`;
   const page = await fetch(`${base}/`);
   assert.equal(page.status, 200);
+  assert.equal(page.headers.get("x-frame-options"), "DENY");
+  assert.equal(page.headers.get("x-content-type-options"), "nosniff");
+  assert.match(page.headers.get("content-security-policy") || "", /default-src 'self'/);
   assert.match(await page.text(), /SIFT India/);
   const search = await fetch(`${base}/api/search?q=telangana`);
   assert.equal(search.status, 200);
   assert.equal(search.headers.get("cache-control"), "no-store");
+  assert.equal(search.headers.get("x-frame-options"), "DENY");
   const searchResult = await search.json();
   assert.equal(searchResult.sources[0].authority, "Telangana Food Safety Department");
   assert.deepEqual(searchResult.records, []);
