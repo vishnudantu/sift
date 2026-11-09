@@ -9,6 +9,8 @@ test("renders truthful no-data state and source registry", () => {
   assert.match(html, /Food Safety and Standards Authority of India/);
   assert.match(html, /Telangana Food Safety Department/);
   assert.match(html, /Public status · read only/);
+  assert.match(html, /Suggest a <i>source lead/);
+  assert.match(html, /never becomes an inspection record/);
 });
 
 test("escapes source registry values before rendering", () => {
