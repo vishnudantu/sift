@@ -9,6 +9,7 @@ Updated: 2026-11-09
 - claude-mem task-state tools verified operational.
 - Responsive public interface implemented with server-rendered HTML, keyboard skip navigation, reduced-motion styling, and mobile navigation.
 - Read-only search API returns registered-source matches only and explicitly returns no inspection records.
+- Public source-lead intake stores HTTPS links and context locally in the submitting browser, labels each as unverified, and does not create an evidence record.
 - Page includes description, theme, and Open Graph metadata; no production domain or sitemap is claimed.
 - Safe static-file serving and explicit asset allowlist added.
 - Evidence artifacts derive and validate SHA-256 against retained text.
@@ -23,7 +24,7 @@ Updated: 2026-11-09
 
 ## Current milestone
 
-Milestone 4 complete: durable evidence journaling and read-only source search are verified. The application still has no published official inspection records.
+Milestone 4 complete: durable evidence journaling, read-only source search, and browser-local unverified source-lead intake are verified. The application still has no published official inspection records.
 
 ## In progress
 
