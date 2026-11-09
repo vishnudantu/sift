@@ -1,4 +1,5 @@
 import { appendCorrection, createArtifact, createEvidenceRecord, immutableCopy } from "./evidence.mjs";
+import { createJournal } from "./journal.mjs";
 
 const REVIEW_DECISIONS = new Set(["approved", "rejected"]);
 const isNonEmptyString = (value) => typeof value === "string" && value.trim().length > 0;
@@ -9,10 +10,45 @@ const freezeSnapshot = (state) => Object.freeze({
   events: Object.freeze(state.events)
 });
 
-export const createEvidenceRepository = () => {
-  let state = { artifacts: new Map(), records: new Map(), events: [] };
+const replayJournal = (journal) => {
+  const state = { artifacts: new Map(), records: new Map(), events: [] };
+  for (const { payload } of journal.entries()) {
+    if (payload.type === "artifact-appended") {
+      const artifact = createArtifact(payload.artifact);
+      if (state.artifacts.has(artifact.id)) throw new Error(`Duplicate artifact in journal: ${artifact.id}`);
+      state.artifacts.set(artifact.id, artifact);
+    } else if (payload.type === "record-appended") {
+      const artifact = state.artifacts.get(payload.record.artifactId);
+      if (!artifact) throw new Error(`Record references missing artifact: ${payload.record.id}`);
+      const result = createEvidenceRecord({ ...payload.record, artifact });
+      if (state.records.has(result.record.id)) throw new Error(`Duplicate record in journal: ${result.record.id}`);
+      state.records.set(result.record.id, result.record);
+    } else if (payload.type === "record-reviewed") {
+      const record = state.records.get(payload.recordId);
+      if (!record || record.status !== "unpublished" || !REVIEW_DECISIONS.has(payload.decision) || !isNonEmptyString(payload.reviewerId)) throw new Error(`Invalid review in journal: ${payload.recordId}`);
+      state.records.set(payload.recordId, Object.freeze({
+        ...record,
+        status: payload.decision === "approved" ? "published" : "rejected",
+        verification: immutableCopy({ ...record.verification, decision: payload.decision, reviewerId: payload.reviewerId, note: payload.note || null })
+      }));
+    } else if (payload.type === "record-corrected") {
+      const record = state.records.get(payload.recordId);
+      if (!record || record.status !== "published") throw new Error(`Invalid correction in journal: ${payload.recordId}`);
+      state.records.set(payload.recordId, appendCorrection(record, payload.correction));
+    } else {
+      throw new Error(`Unsupported journal event: ${payload.type}`);
+    }
+    state.events.push(immutableCopy(payload));
+  }
+  return state;
+};
+
+export const createEvidenceRepository = ({ journalPath } = {}) => {
+  const journal = journalPath ? createJournal(journalPath) : null;
+  let state = journal ? replayJournal(journal) : { artifacts: new Map(), records: new Map(), events: [] };
 
   const commit = (nextState, event) => {
+    journal?.append(event);
     state = {
       artifacts: nextState.artifacts,
       records: nextState.records,
@@ -27,7 +63,7 @@ export const createEvidenceRepository = () => {
     if (state.artifacts.has(artifact.id)) throw new Error(`Artifact already exists: ${artifact.id}`);
     const artifacts = new Map(state.artifacts);
     artifacts.set(artifact.id, artifact);
-    commit({ artifacts, records: new Map(state.records) }, { type: "artifact-appended", artifactId: artifact.id });
+    commit({ artifacts, records: new Map(state.records) }, { type: "artifact-appended", artifact });
     return artifact;
   };
 
@@ -37,10 +73,11 @@ export const createEvidenceRepository = () => {
     if (!storedArtifact) throw new Error(`Artifact must be appended first: ${result.artifact.id}`);
     if (storedArtifact.sha256 !== result.artifact.sha256) throw new Error("Record artifact does not match the stored artifact");
     if (state.records.has(result.record.id)) throw new Error(`Evidence record already exists: ${result.record.id}`);
+    const record = Object.freeze({ ...result.record, artifactId: storedArtifact.id });
     const records = new Map(state.records);
-    records.set(result.record.id, result.record);
-    commit({ artifacts: new Map(state.artifacts), records }, { type: "record-appended", recordId: result.record.id });
-    return result.record;
+    records.set(record.id, record);
+    commit({ artifacts: new Map(state.artifacts), records }, { type: "record-appended", record });
+    return record;
   };
 
   const reviewRecord = (recordId, input) => {
@@ -56,7 +93,7 @@ export const createEvidenceRepository = () => {
     });
     const records = new Map(state.records);
     records.set(recordId, reviewed);
-    commit({ artifacts: new Map(state.artifacts), records }, { type: "record-reviewed", recordId, decision: input.decision, reviewerId: input.reviewerId });
+    commit({ artifacts: new Map(state.artifacts), records }, { type: "record-reviewed", recordId, decision: input.decision, reviewerId: input.reviewerId, note: input.note || null });
     return reviewed;
   };
 
@@ -66,7 +103,7 @@ export const createEvidenceRepository = () => {
     const corrected = appendCorrection(record, correction);
     const records = new Map(state.records);
     records.set(recordId, corrected);
-    commit({ artifacts: new Map(state.artifacts), records }, { type: "record-corrected", recordId, correctionId: correction.id, reviewerId: correction.reviewerId });
+    commit({ artifacts: new Map(state.artifacts), records }, { type: "record-corrected", recordId, correction: immutableCopy(correction) });
     return corrected;
   };
 
@@ -74,3 +111,4 @@ export const createEvidenceRepository = () => {
 };
 
 export const reviewDecisions = Object.freeze([...REVIEW_DECISIONS]);
+export { replayJournal };

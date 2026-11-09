@@ -12,7 +12,8 @@ Updated: 2026-11-09
 - Evidence artifacts derive and validate SHA-256 against retained text.
 - Evidence artifacts require HTTPS, credential-free, hostname-based canonical URLs.
 - Evidence records require exact passages retained in their artifact and are deeply immutable.
-- In-memory evidence repository enforces artifact-first intake, duplicate rejection, reviewer approval/rejection, and append-only correction events.
+- Durable hash-linked evidence journal supports replay and detects tampering or broken chains.
+- Evidence repository can replay persisted artifact, record, review, and correction events.
 - Ingestion boundary rejects unpermitted sources, non-HTTPS URLs, IP literals, local hosts, and non-allowlisted hosts.
 - Network fetching remains disabled until a source and transport policy are approved.
 - Corrections are append-only and published records are never silently mutated.
@@ -20,7 +21,7 @@ Updated: 2026-11-09
 
 ## Current milestone
 
-Milestone 3 in progress: the in-memory evidence repository supports reviewer approval, rejection, and append-only correction events. Durable persistence and authenticated administration remain incomplete. The application still has no published official inspection records.
+Milestone 3 complete: durable evidence journaling and repository replay are verified. The application still has no published official inspection records.
 
 ## In progress
 
@@ -31,7 +32,7 @@ Milestone 3 in progress: the in-memory evidence repository supports reviewer app
 
 ## Verification
 
-- `npm test`: 16 passed, 0 failed.
+- `npm test`: 22 passed, 0 failed.
 - `npm run lint`: all JavaScript module syntax checks passed.
 - Fresh live smoke: `/` 200, `/styles.css` 200, `/app.js` 200, `/package.json` 404, encoded traversal 404.
 - Candidate `foodsafety.telangana.gov.in` did not resolve in this environment.

@@ -77,6 +77,31 @@ test("repository snapshots preserve append-only review lifecycle", () => {
   assert.throws(() => repository.reviewRecord(record.id, { decision: "approved", reviewerId: "reviewer-2" }), /Only unpublished/);
 });
 
+
+
+test("repository replays its durable journal", async () => {
+  const { mkdtempSync, rmSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const directory = mkdtempSync(join(tmpdir(), "sift-repository-"));
+  const journalPath = join(directory, "events.ndjson");
+  try {
+    const first = createEvidenceRepository({ journalPath });
+    const artifact = first.appendArtifact(validArtifact);
+    const record = first.appendRecord({
+      id: "claim-persisted", artifact, jurisdiction: "Telangana", classification: "finding",
+      exactPassage: "Exact captured source text.", sourceLocator: { kind: "paragraph", value: "p-4" },
+      verification: { decision: "pending", reviewerId: "intake-1" }
+    });
+    first.reviewRecord(record.id, { decision: "approved", reviewerId: "reviewer-1" });
+    const reopened = createEvidenceRepository({ journalPath });
+    assert.equal(reopened.snapshot().records[0].status, "published");
+    assert.equal(reopened.snapshot().events.length, 3);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("repository requires stored artifact, valid decision, and reviewer identity", () => {
   const repository = createEvidenceRepository();
   assert.throws(() => repository.appendRecord({
