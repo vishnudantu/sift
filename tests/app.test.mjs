@@ -1,6 +1,6 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
-import { renderPage } from "../src/app.mjs";
+import { renderPage, searchPublicIndex } from "../src/app.mjs";
 import { createAppServer, resolvePublicPath } from "../server.mjs";
 
 test("renders truthful no-data state and source registry", () => {
@@ -8,12 +8,22 @@ test("renders truthful no-data state and source registry", () => {
   assert.match(html, /That is not evidence that any business is safe/);
   assert.match(html, /Food Safety and Standards Authority of India/);
   assert.match(html, /Telangana Food Safety Department/);
-  assert.match(html, /Operator preview · read only/);
+  assert.match(html, /Public status · read only/);
 });
 
 test("escapes source registry values before rendering", () => {
   const html = renderPage();
   assert.doesNotMatch(html, /<script>/i);
+});
+
+test("searches registered sources without inventing records", () => {
+  const result = searchPublicIndex("  TELANGANA  " );
+  assert.equal(result.query, "telangana");
+  assert.equal(result.sources.length, 1);
+  assert.equal(result.sources[0].authority, "Telangana Food Safety Department");
+  assert.deepEqual(result.records, []);
+  assert.equal(searchPublicIndex("").sources.length, 0);
+  assert.equal(searchPublicIndex("unlisted place").sources.length, 0);
 });
 
 test("rejects paths outside the public root", () => {
@@ -31,6 +41,14 @@ test("serves server-rendered HTML and static assets", async (t) => {
   const page = await fetch(`${base}/`);
   assert.equal(page.status, 200);
   assert.match(await page.text(), /SIFT India/);
+  const search = await fetch(`${base}/api/search?q=telangana`);
+  assert.equal(search.status, 200);
+  assert.equal(search.headers.get("cache-control"), "no-store");
+  const searchResult = await search.json();
+  assert.equal(searchResult.sources[0].authority, "Telangana Food Safety Department");
+  assert.deepEqual(searchResult.records, []);
+  const oversized = await fetch(`${base}/api/search?q=${"x".repeat(121)}`);
+  assert.equal(oversized.status, 400);
   const stylesheet = await fetch(`${base}/styles.css`);
   assert.equal(stylesheet.status, 200);
   assert.match(stylesheet.headers.get("content-type") || "", /text\/css/);

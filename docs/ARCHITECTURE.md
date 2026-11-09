@@ -1,6 +1,6 @@
 # Architecture baseline
 
-The current slice is a dependency-free Node.js 22 application. `server.mjs` owns the HTTP boundary and serves a server-rendered page from `src/app.mjs`. Static files are served only from an explicit public asset allowlist after normalized path validation.
+The current slice is a dependency-free Node.js 22 application. `server.mjs` owns the HTTP boundary, serves a server-rendered page from `src/app.mjs`, and exposes a read-only `/api/search` endpoint that matches registered source metadata only. It never returns inspection records. Static files are served only from an explicit public asset allowlist after normalized path validation.
 
 `src/data.mjs` is an immutable source and public-state boundary. `src/evidence.mjs` defines evidence artifact and claim contracts. Artifacts require a source identifier, canonical URL, retrieval and publication timestamps, content type, SHA-256 digest, retained raw text, and a permitted access decision. Claims require an exact passage, source locator, jurisdiction, classification, and reviewer decision, and remain unpublished until an explicit publication workflow.
 

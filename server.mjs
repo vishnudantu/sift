@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { extname, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { renderPage } from "./src/app.mjs";
+import { renderPage, searchPublicIndex } from "./src/app.mjs";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
 const port = Number(process.env.PORT || 4173);
@@ -31,6 +31,17 @@ export const createAppServer = () => createServer(async (request, response) => {
     return;
   }
   const pathname = new URL(request.url || "/", "http://127.0.0.1").pathname;
+  if (pathname === "/api/search") {
+    const query = new URL(request.url || "/", "http://127.0.0.1").searchParams.get("q") || "";
+    if (query.length > 120) {
+      response.writeHead(400, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+      response.end(JSON.stringify({ error: "Search query must be 120 characters or fewer." }));
+      return;
+    }
+    response.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" });
+    response.end(JSON.stringify(searchPublicIndex(query)));
+    return;
+  }
   if (pathname === "/") {
     const body = renderPage();
     response.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });

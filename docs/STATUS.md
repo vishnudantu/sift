@@ -7,7 +7,9 @@ Updated: 2026-11-09
 - Requirements and concept package audited.
 - billion-context compression path verified operational.
 - claude-mem task-state tools verified operational.
-- Public responsive vertical slice implemented with server-rendered HTML.
+- Responsive public interface implemented with server-rendered HTML, keyboard skip navigation, reduced-motion styling, and mobile navigation.
+- Read-only search API returns registered-source matches only and explicitly returns no inspection records.
+- Page includes description, theme, and Open Graph metadata; no production domain or sitemap is claimed.
 - Safe static-file serving and explicit asset allowlist added.
 - Evidence artifacts derive and validate SHA-256 against retained text.
 - Evidence artifacts require HTTPS, credential-free, hostname-based canonical URLs.
@@ -21,7 +23,7 @@ Updated: 2026-11-09
 
 ## Current milestone
 
-Milestone 3 complete: durable evidence journaling and repository replay are verified. The application still has no published official inspection records.
+Milestone 4 complete: durable evidence journaling and read-only source search are verified. The application still has no published official inspection records.
 
 ## In progress
 
@@ -32,9 +34,9 @@ Milestone 3 complete: durable evidence journaling and repository replay are veri
 
 ## Verification
 
-- `npm test`: 22 passed, 0 failed.
+- `npm test`: 23 passed, 0 failed.
 - `npm run lint`: all JavaScript module syntax checks passed.
-- Fresh live smoke: `/` 200, `/styles.css` 200, `/app.js` 200, `/package.json` 404, encoded traversal 404.
+- Fresh live smoke: `/` 200; `/api/search?q=telangana` returns the registered source and zero records; private and encoded traversal paths return 404.
 - Candidate `foodsafety.telangana.gov.in` did not resolve in this environment.
 - FSSAI HTTPS probes returned proxy errors in this environment.
 
