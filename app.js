@@ -42,18 +42,25 @@ leadForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const formData = new FormData(leadForm);
   const url = String(formData.get("url") || "").trim();
-  const note = String(formData.get("note") || "").trim();
+  const publishedAt = String(formData.get("publishedAt") || "");
+  const jurisdiction = String(formData.get("jurisdiction") || "").trim();
+  const passage = String(formData.get("passage") || "").trim();
   let parsed;
   try { parsed = new URL(url); } catch { parsed = null; }
-  if (!parsed || parsed.protocol !== "https:" || !note) {
-    leadStatus.textContent = "Use a complete HTTPS URL and a short verification note.";
+  if (!parsed || parsed.protocol !== "https:" || !publishedAt || !jurisdiction || !passage) {
+    leadStatus.textContent = "Provide an HTTPS URL, publication date, jurisdiction, and exact passage.";
     return;
   }
-  const leads = JSON.parse(localStorage.getItem("sift-source-leads") || "[]");
-  leads.push({ url: parsed.href, note, status: "unverified", submittedAt: new Date().toISOString() });
-  localStorage.setItem("sift-source-leads", JSON.stringify(leads.slice(-20)));
-  leadForm.reset();
-  leadStatus.textContent = "Saved locally as an unverified lead. It is not an inspection record.";
+  try {
+    const stored = JSON.parse(localStorage.getItem("sift-source-leads") || "[]");
+    const leads = Array.isArray(stored) ? stored : [];
+    leads.push({ url: parsed.href, publishedAt, jurisdiction, passage, status: "unverified", submittedAt: new Date().toISOString() });
+    localStorage.setItem("sift-source-leads", JSON.stringify(leads.slice(-20)));
+    leadForm.reset();
+    leadStatus.textContent = "Saved locally as an unverified lead. It is not an inspection record.";
+  } catch {
+    leadStatus.textContent = "This browser could not save the lead. Nothing was submitted to SIFT.";
+  }
 });
 
 menuButton.addEventListener("click", () => {

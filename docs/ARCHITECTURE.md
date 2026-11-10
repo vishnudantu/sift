@@ -14,6 +14,6 @@ No model provider is wired yet. AI must sit behind a provider-agnostic gateway, 
 
 The journal is not yet a production persistence layer. It lacks multi-process locking, encryption at rest, remote backup, disaster recovery automation, and authenticated administration. Those controls remain release gates before publication.
 
-The public server does not open the journal or expose repository mutation routes. User source leads are stored only in the submitter's browser localStorage, capped at 20, and remain unverified; the intake does not fetch URLs, contact a server, or create evidence records. A future authenticated Command service must own shared review and journal writes behind MFA, role checks, audit logging, request validation, and rate limits.
+The public server does not open the journal or expose repository mutation routes. User evidence leads capture a source URL, claimed publication date, jurisdiction or branch, and exact passage. They are stored only in the submitter's browser localStorage, capped at 20, and remain unverified; the intake does not fetch URLs, contact a server, or create evidence records. A future authenticated Command service must own shared review and journal writes behind MFA, role checks, audit logging, request validation, and rate limits.
 
 No source hostname, record, safety status, or model output may be inferred from authority names, search results, or absent coverage. A connector remains disabled until its authority URL, terms, access method, host allowlist, and operator approval are documented.
